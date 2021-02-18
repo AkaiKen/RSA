@@ -16,6 +16,7 @@ use crate::padding::PaddingScheme;
 use crate::raw::{DecryptionPrimitive, EncryptionPrimitive};
 use crate::{oaep, pkcs1v15, pss};
 
+
 lazy_static! {
     static ref MIN_PUB_EXPONENT: BigUint = BigUint::from_u64(2).unwrap();
     static ref MAX_PUB_EXPONENT: BigUint = BigUint::from_u64(1 << (31 - 1)).unwrap();
@@ -41,7 +42,7 @@ pub trait PrivateKey: DecryptionPrimitive + PublicKeyParts {}
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(
     feature = "serde",
-    derive(Serialize, Deserialize),
+    derive(Serialize, Deserialize, Debug),
     serde(crate = "serde_crate")
 )]
 pub struct RSAPublicKey {
@@ -218,6 +219,21 @@ impl RSAPublicKey {
         Ok(k)
     }
 
+
+    pub fn n_to_vecu8(&self) -> Vec<u8> {
+        self.n.to_bytes_le()
+    }
+    pub fn e_to_vecu8(&self) -> Vec<u8> {
+        self.e.to_bytes_le()
+    }
+    pub fn u8_form_pk(n: &Vec<u8>, e: &Vec<u8>)->RSAPublicKey {
+        let result = RSAPublicKey {
+            n: BigUint::from_bytes_le(&n),
+            e: BigUint::from_bytes_le(&e),
+        };
+        result
+    }
+
     /// Parse a `PKCS1` encoded RSA Public Key.
     ///
     /// The `der` data is expected to be the `base64` decoded content
@@ -310,6 +326,19 @@ impl<'a> PublicKey for &'a RSAPublicKey {
         (*self).verify(padding, hashed, sig)
     }
 }
+//---func to Vecu8
+// pub struct PKstruct {
+//     e: Vec[u8]
+//     n: Vec[u8]
+// }
+// trait PublicKeyChange for RSAPublicKey {
+//     pub fn n_to_vecu8(&self) -> Vec<u8> {
+//         self.n.to_bytes_le()
+//     }
+//     pub fn e_to_vecu8(&self) -> Vec<u8> {
+//         self.e.to_bytes_le()
+//     }
+// }
 
 impl PublicKeyParts for RSAPrivateKey {
     fn n(&self) -> &BigUint {
